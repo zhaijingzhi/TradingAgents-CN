@@ -97,8 +97,8 @@ class AsyncProgressDisplay:
                 with self.step_info:
                     if st.button("📊 查看分析报告", key=f"view_report_{progress_data.get('analysis_id', 'unknown')}", type="primary"):
                         analysis_id = progress_data.get('analysis_id')
-                        # 尝试恢复分析结果（如果还没有的话）
-                        if not st.session_state.get('analysis_results'):
+                        # 只有成功完成的分析才恢复结果和显示报告
+                        if status == 'completed' and not st.session_state.get('analysis_results'):
                             try:
                                 from web.utils.analysis_runner import format_analysis_results
                                 raw_results = progress_data.get('raw_results')
@@ -107,13 +107,16 @@ class AsyncProgressDisplay:
                                     if formatted_results:
                                         st.session_state.analysis_results = formatted_results
                                         st.session_state.analysis_running = False
+                                        # 触发显示报告
+                                        st.session_state.show_analysis_results = True
+                                        st.session_state.current_analysis_id = analysis_id
+                                        st.rerun()
                             except Exception as e:
                                 st.error(f"恢复分析结果失败: {e}")
-
-                        # 触发显示报告
-                        st.session_state.show_analysis_results = True
-                        st.session_state.current_analysis_id = analysis_id
-                        st.rerun()
+                        elif status == 'failed':
+                            # 失败的分析不显示报告，清空结果
+                            st.session_state.analysis_results = None
+                            st.session_state.analysis_running = False
             else:
                 self.step_info.info(f"📊 **进度**: 第 {current_step + 1} 步，共 {total_steps} 步 ({progress_percentage:.1f}%)\n\n"
                                   f"**当前步骤**: {step_name}\n\n"
@@ -233,8 +236,8 @@ def streamlit_auto_refresh_progress(analysis_id: str, refresh_interval: int = 2)
         # 添加查看报告按钮
         if st.button("📊 查看分析报告", key=f"view_report_streamlit_{progress_data.get('analysis_id', 'unknown')}", type="primary"):
             analysis_id = progress_data.get('analysis_id')
-            # 尝试恢复分析结果（如果还没有的话）
-            if not st.session_state.get('analysis_results'):
+            # 只有成功完成的分析才恢复结果和显示报告
+            if status == 'completed' and not st.session_state.get('analysis_results'):
                 try:
                     from web.utils.analysis_runner import format_analysis_results
                     raw_results = progress_data.get('raw_results')
@@ -243,13 +246,16 @@ def streamlit_auto_refresh_progress(analysis_id: str, refresh_interval: int = 2)
                         if formatted_results:
                             st.session_state.analysis_results = formatted_results
                             st.session_state.analysis_running = False
+                            # 触发显示报告
+                            st.session_state.show_analysis_results = True
+                            st.session_state.current_analysis_id = analysis_id
+                            st.rerun()
                 except Exception as e:
                     st.error(f"恢复分析结果失败: {e}")
-
-            # 触发显示报告
-            st.session_state.show_analysis_results = True
-            st.session_state.current_analysis_id = analysis_id
-            st.rerun()
+            elif status == 'failed':
+                # 失败的分析不显示报告，清空结果
+                st.session_state.analysis_results = None
+                st.session_state.analysis_running = False
     else:
         st.info(f"📊 **进度**: 第 {current_step + 1} 步，共 {total_steps} 步 ({progress_percentage:.1f}%)\n\n"
                f"**当前步骤**: {step_name}\n\n"
@@ -397,7 +403,8 @@ def display_static_progress(analysis_id: str) -> bool:
                     from web.utils.async_progress_tracker import get_progress_by_id
                     from web.utils.analysis_runner import format_analysis_results
                     progress_data = get_progress_by_id(analysis_id)
-                    if progress_data and progress_data.get('raw_results'):
+                    # 只有成功完成的分析才恢复结果
+                    if progress_data and progress_data.get('status') == 'completed' and progress_data.get('raw_results'):
                         formatted_results = format_analysis_results(progress_data['raw_results'])
                         if formatted_results:
                             st.session_state.analysis_results = formatted_results
@@ -405,10 +412,13 @@ def display_static_progress(analysis_id: str) -> bool:
                 except Exception as e:
                     st.error(f"恢复分析结果失败: {e}")
 
-            # 触发显示报告
-            st.session_state.show_analysis_results = True
-            st.session_state.current_analysis_id = analysis_id
-            st.rerun()
+            # 只有成功恢复结果才触发显示报告
+            if st.session_state.get('analysis_results'):
+                st.session_state.show_analysis_results = True
+                st.session_state.current_analysis_id = analysis_id
+                st.rerun()
+            else:
+                st.error("无法恢复分析结果，可能分析未成功完成")
     else:
         st.info(f"{status_icon} **当前状态**: {last_message}")
 
@@ -564,7 +574,8 @@ def display_static_progress_with_controls(analysis_id: str, show_refresh_control
                     from web.utils.async_progress_tracker import get_progress_by_id
                     from web.utils.analysis_runner import format_analysis_results
                     progress_data = get_progress_by_id(analysis_id)
-                    if progress_data and progress_data.get('raw_results'):
+                    # 只有成功完成的分析才恢复结果
+                    if progress_data and progress_data.get('status') == 'completed' and progress_data.get('raw_results'):
                         formatted_results = format_analysis_results(progress_data['raw_results'])
                         if formatted_results:
                             st.session_state.analysis_results = formatted_results
@@ -572,10 +583,13 @@ def display_static_progress_with_controls(analysis_id: str, show_refresh_control
                 except Exception as e:
                     st.error(f"恢复分析结果失败: {e}")
 
-            # 触发显示报告
-            st.session_state.show_analysis_results = True
-            st.session_state.current_analysis_id = analysis_id
-            st.rerun()
+            # 只有成功恢复结果才触发显示报告
+            if st.session_state.get('analysis_results'):
+                st.session_state.show_analysis_results = True
+                st.session_state.current_analysis_id = analysis_id
+                st.rerun()
+            else:
+                st.error("无法恢复分析结果，可能分析未成功完成")
     elif status == 'failed':
         st.error(f"{status_icon} **当前状态**: {last_message}")
     else:

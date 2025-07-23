@@ -424,6 +424,14 @@ class TushareProvider:
             result = f"{symbol}.BJ"  # 北京证券交易所
             logger.info(f"🔍 [股票代码追踪] 北京证券交易所: '{symbol}' -> '{result}'")
             return result
+        elif symbol.startswith('5'):
+            result = f"{symbol}.SH"  # 上海证券交易所ETF (5开头)
+            logger.info(f"🔍 [股票代码追踪] 上海证券交易所ETF: '{symbol}' -> '{result}'")
+            return result
+        elif symbol.startswith('1'):
+            result = f"{symbol}.SZ"  # 深圳证券交易所ETF (1开头)
+            logger.info(f"🔍 [股票代码追踪] 深圳证券交易所ETF: '{symbol}' -> '{result}'")
+            return result
         else:
             # 默认深圳
             result = f"{symbol}.SZ"

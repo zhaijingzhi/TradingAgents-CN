@@ -187,22 +187,32 @@ def initialize_session_state():
                     progress_data.get('status') == 'completed' and
                     'raw_results' in progress_data):
 
-                    # 恢复分析结果
-                    raw_results = progress_data['raw_results']
-                    formatted_results = format_analysis_results(raw_results)
+                    # 检查分析状态，只有成功的分析才恢复结果
+                    analysis_status = progress_data.get('status', 'completed')
+                    st.session_state.current_analysis_id = latest_id
+                    st.session_state.analysis_running = (analysis_status == 'running')
+                    
+                    if analysis_status == 'completed':
+                        # 只有成功完成的分析才恢复结果
+                        raw_results = progress_data['raw_results']
+                        formatted_results = format_analysis_results(raw_results)
 
-                    if formatted_results:
-                        st.session_state.analysis_results = formatted_results
-                        st.session_state.current_analysis_id = latest_id
-                        # 检查分析状态
-                        analysis_status = progress_data.get('status', 'completed')
-                        st.session_state.analysis_running = (analysis_status == 'running')
-                        # 恢复股票信息
-                        if 'stock_symbol' in raw_results:
-                            st.session_state.last_stock_symbol = raw_results.get('stock_symbol', '')
-                        if 'market_type' in raw_results:
-                            st.session_state.last_market_type = raw_results.get('market_type', '')
-                        logger.info(f"📊 [结果恢复] 从分析 {latest_id} 恢复结果，状态: {analysis_status}")
+                        if formatted_results:
+                            st.session_state.analysis_results = formatted_results
+                            # 恢复股票信息
+                            if 'stock_symbol' in raw_results:
+                                st.session_state.last_stock_symbol = raw_results.get('stock_symbol', '')
+                            if 'market_type' in raw_results:
+                                st.session_state.last_market_type = raw_results.get('market_type', '')
+                            logger.info(f"📊 [结果恢复] 从分析 {latest_id} 恢复结果，状态: {analysis_status}")
+                        else:
+                            # 格式化失败，清空结果
+                            st.session_state.analysis_results = None
+                            logger.warning(f"📊 [结果恢复] 分析 {latest_id} 结果格式化失败")
+                    else:
+                        # 失败或运行中的分析不恢复结果
+                        st.session_state.analysis_results = None
+                        logger.info(f"📊 [结果恢复] 分析 {latest_id} 状态为 {analysis_status}，不恢复结果")
 
         except Exception as e:
             logger.warning(f"⚠️ [结果恢复] 恢复失败: {e}")
@@ -788,8 +798,16 @@ def main():
                             progress_callback=progress_callback
                         )
 
-                        # 标记分析完成并保存结果（不访问session state）
-                        async_tracker.mark_completed("✅ 分析成功完成！", results=results)
+                        # 检查分析结果，只有成功时才标记为完成
+                        if results and results.get('success', False):
+                            # 标记分析完成并保存结果（不访问session state）
+                            async_tracker.mark_completed("✅ 分析成功完成！", results=results)
+                        else:
+                            # 分析失败，标记为失败状态
+                            error_msg = results.get('error', '未知错误') if results else '分析返回空结果'
+                            async_tracker.mark_failed(error_msg)
+                            logger.error(f"❌ [分析失败] {analysis_id}: {error_msg}")
+                            return  # 提前返回，不执行后续的成功日志
 
                         logger.info(f"✅ [分析完成] 股票分析成功完成: {analysis_id}")
 
