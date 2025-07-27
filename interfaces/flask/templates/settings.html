@@ -1,0 +1,548 @@
+{% extends "base.html" %}
+
+{% block title %}系统设置 - TradingAgents-CN{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4">
+            <i class="fas fa-cog me-2"></i>
+            系统设置
+        </h1>
+    </div>
+</div>
+
+<!-- 设置选项卡 -->
+<div class="row">
+    <div class="col-12">
+        <ul class="nav nav-tabs" id="settingsTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="api-tab" data-bs-toggle="tab" 
+                        data-bs-target="#api-settings" type="button" role="tab">
+                    <i class="fas fa-key me-2"></i>
+                    API配置
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="model-tab" data-bs-toggle="tab" 
+                        data-bs-target="#model-settings" type="button" role="tab">
+                    <i class="fas fa-robot me-2"></i>
+                    模型设置
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="system-tab" data-bs-toggle="tab" 
+                        data-bs-target="#system-settings" type="button" role="tab">
+                    <i class="fas fa-server me-2"></i>
+                    系统信息
+                </button>
+            </li>
+        </ul>
+        
+        <div class="tab-content" id="settingsTabContent">
+            <!-- API配置选项卡 -->
+            <div class="tab-pane fade show active" id="api-settings" role="tabpanel">
+                <div class="card mt-3">
+                    <div class="card-header">
+                        <i class="fas fa-key me-2"></i>
+                        API密钥配置
+                    </div>
+                    <div class="card-body">
+                        <form id="api-settings-form">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6 class="text-primary mb-3">🇨🇳 国产AI模型</h6>
+                                    
+                                    <div class="mb-3">
+                                        <label for="dashscope-key" class="form-label">
+                                            阿里百炼 API Key
+                                            <span id="dashscope-status" class="ms-2"></span>
+                                        </label>
+                                        <div class="input-group">
+                                            <input type="password" class="form-control" id="dashscope-key" 
+                                                   placeholder="sk-xxxxxxxxxxxxxxxx">
+                                            <button class="btn btn-outline-secondary" type="button" 
+                                                    onclick="togglePassword('dashscope-key')">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                        </div>
+                                        <div class="form-text">
+                                            从 <a href="https://dashscope.aliyun.com/" target="_blank">阿里百炼控制台</a> 获取
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="deepseek-key" class="form-label">
+                                            DeepSeek API Key
+                                            <span id="deepseek-status" class="ms-2"></span>
+                                        </label>
+                                        <div class="input-group">
+                                            <input type="password" class="form-control" id="deepseek-key" 
+                                                   placeholder="sk-xxxxxxxxxxxxxxxx">
+                                            <button class="btn btn-outline-secondary" type="button" 
+                                                    onclick="togglePassword('deepseek-key')">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                        </div>
+                                        <div class="form-text">
+                                            从 <a href="https://platform.deepseek.com/" target="_blank">DeepSeek平台</a> 获取
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <h6 class="text-info mb-3">🌍 国际AI模型</h6>
+                                    
+                                    <div class="mb-3">
+                                        <label for="google-key" class="form-label">
+                                            Google AI API Key
+                                            <span id="google-status" class="ms-2"></span>
+                                        </label>
+                                        <div class="input-group">
+                                            <input type="password" class="form-control" id="google-key" 
+                                                   placeholder="AIxxxxxxxxxxxxxxxx">
+                                            <button class="btn btn-outline-secondary" type="button" 
+                                                    onclick="togglePassword('google-key')">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                        </div>
+                                        <div class="form-text">
+                                            从 <a href="https://makersuite.google.com/app/apikey" target="_blank">Google AI Studio</a> 获取
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="openai-key" class="form-label">
+                                            OpenAI API Key
+                                            <span id="openai-status" class="ms-2"></span>
+                                        </label>
+                                        <div class="input-group">
+                                            <input type="password" class="form-control" id="openai-key" 
+                                                   placeholder="sk-xxxxxxxxxxxxxxxx">
+                                            <button class="btn btn-outline-secondary" type="button" 
+                                                    onclick="togglePassword('openai-key')">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                        </div>
+                                        <div class="form-text">
+                                            从 <a href="https://platform.openai.com/api-keys" target="_blank">OpenAI平台</a> 获取
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <hr>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6 class="text-success mb-3">📊 数据源API</h6>
+                                    
+                                    <div class="mb-3">
+                                        <label for="finnhub-key" class="form-label">
+                                            FinnHub API Key
+                                            <span id="finnhub-status" class="ms-2"></span>
+                                        </label>
+                                        <div class="input-group">
+                                            <input type="password" class="form-control" id="finnhub-key" 
+                                                   placeholder="xxxxxxxxxxxxxxxx">
+                                            <button class="btn btn-outline-secondary" type="button" 
+                                                    onclick="togglePassword('finnhub-key')">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                        </div>
+                                        <div class="form-text">
+                                            从 <a href="https://finnhub.io/" target="_blank">FinnHub</a> 获取，用于美股数据
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="tushare-token" class="form-label">
+                                            Tushare Token
+                                            <span id="tushare-status" class="ms-2"></span>
+                                        </label>
+                                        <div class="input-group">
+                                            <input type="password" class="form-control" id="tushare-token" 
+                                                   placeholder="xxxxxxxxxxxxxxxx">
+                                            <button class="btn btn-outline-secondary" type="button" 
+                                                    onclick="togglePassword('tushare-token')">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                        </div>
+                                        <div class="form-text">
+                                            从 <a href="https://tushare.pro/" target="_blank">Tushare Pro</a> 获取，用于A股数据
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                <button type="button" class="btn btn-outline-secondary" onclick="testAllAPIs()">
+                                    <i class="fas fa-vial me-2"></i>
+                                    测试所有API
+                                </button>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save me-2"></i>
+                                    保存配置
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 模型设置选项卡 -->
+            <div class="tab-pane fade" id="model-settings" role="tabpanel">
+                <div class="card mt-3">
+                    <div class="card-header">
+                        <i class="fas fa-robot me-2"></i>
+                        AI模型配置
+                    </div>
+                    <div class="card-body">
+                        <form id="model-settings-form">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="default-provider" class="form-label">默认AI提供商</label>
+                                        <select class="form-select" id="default-provider">
+                                            <option value="dashscope">阿里百炼 (推荐)</option>
+                                            <option value="deepseek">DeepSeek V3</option>
+                                            <option value="google">Google AI</option>
+                                            <option value="openai">OpenAI</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="deep-think-model" class="form-label">深度思考模型</label>
+                                        <select class="form-select" id="deep-think-model">
+                                            <option value="qwen-plus">qwen-plus (平衡)</option>
+                                            <option value="qwen-max">qwen-max (最强)</option>
+                                            <option value="qwen-turbo">qwen-turbo (快速)</option>
+                                        </select>
+                                        <div class="form-text">用于复杂分析和推理任务</div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="quick-think-model" class="form-label">快速思考模型</label>
+                                        <select class="form-select" id="quick-think-model">
+                                            <option value="qwen-turbo">qwen-turbo (快速)</option>
+                                            <option value="qwen-plus">qwen-plus (平衡)</option>
+                                        </select>
+                                        <div class="form-text">用于简单任务和快速响应</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="temperature" class="form-label">
+                                            Temperature (创造性): <span id="temperature-value">0.7</span>
+                                        </label>
+                                        <input type="range" class="form-range" id="temperature" 
+                                               min="0" max="2" step="0.1" value="0.7" 
+                                               oninput="updateRangeValue('temperature')">
+                                        <div class="form-text">控制输出的随机性，值越高越有创造性</div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="max-tokens" class="form-label">最大Token数</label>
+                                        <input type="number" class="form-control" id="max-tokens" 
+                                               min="100" max="8000" value="2000">
+                                        <div class="form-text">控制输出的最大长度</div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="top-p" class="form-label">
+                                            Top P (多样性): <span id="top-p-value">0.9</span>
+                                        </label>
+                                        <input type="range" class="form-range" id="top-p" 
+                                               min="0" max="1" step="0.1" value="0.9" 
+                                               oninput="updateRangeValue('top-p')">
+                                        <div class="form-text">控制输出的多样性</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                <button type="button" class="btn btn-outline-secondary" onclick="resetModelSettings()">
+                                    <i class="fas fa-undo me-2"></i>
+                                    重置默认
+                                </button>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save me-2"></i>
+                                    保存设置
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 系统信息选项卡 -->
+            <div class="tab-pane fade" id="system-settings" role="tabpanel">
+                <div class="card mt-3">
+                    <div class="card-header">
+                        <i class="fas fa-server me-2"></i>
+                        系统信息
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6>📋 基本信息</h6>
+                                <table class="table table-sm">
+                                    <tr><td>应用版本:</td><td><span class="badge bg-primary">v0.1.10</span></td></tr>
+                                    <tr><td>框架版本:</td><td>Flask + Bootstrap 5</td></tr>
+                                    <tr><td>Python版本:</td><td id="python-version">检查中...</td></tr>
+                                    <tr><td>启动时间:</td><td id="start-time">检查中...</td></tr>
+                                </table>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <h6>🔧 系统状态</h6>
+                                <table class="table table-sm">
+                                    <tr><td>TradingAgents核心:</td><td id="core-status">检查中...</td></tr>
+                                    <tr><td>数据库连接:</td><td id="db-status">检查中...</td></tr>
+                                    <tr><td>缓存状态:</td><td id="cache-status">检查中...</td></tr>
+                                    <tr><td>API连通性:</td><td id="api-connectivity">检查中...</td></tr>
+                                </table>
+                            </div>
+                        </div>
+                        
+                        <hr>
+                        
+                        <div class="row">
+                            <div class="col-12">
+                                <h6>🧹 系统维护</h6>
+                                <div class="d-grid gap-2 d-md-flex">
+                                    <button class="btn btn-outline-warning" onclick="clearCache()">
+                                        <i class="fas fa-broom me-2"></i>
+                                        清理缓存
+                                    </button>
+                                    <button class="btn btn-outline-info" onclick="checkSystemHealth()">
+                                        <i class="fas fa-heartbeat me-2"></i>
+                                        系统健康检查
+                                    </button>
+                                    <button class="btn btn-outline-secondary" onclick="exportLogs()">
+                                        <i class="fas fa-file-export me-2"></i>
+                                        导出日志
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // 页面加载时获取设置数据
+    document.addEventListener('DOMContentLoaded', function() {
+        loadSettings();
+        loadSystemInfo();
+    });
+    
+    function loadSettings() {
+        fetch('/api/settings')
+            .then(response => response.json())
+            .then(data => {
+                updateAPIStatus(data.api_keys);
+                updateModelSettings(data.default_model);
+            })
+            .catch(error => {
+                console.error('加载设置失败:', error);
+            });
+    }
+    
+    function updateAPIStatus(apiKeys) {
+        const statusElements = {
+            'dashscope': 'dashscope-status',
+            'deepseek': 'deepseek-status',
+            'google': 'google-status',
+            'openai': 'openai-status',
+            'finnhub': 'finnhub-status',
+            'tushare': 'tushare-status'
+        };
+        
+        for (const [api, elementId] of Object.entries(statusElements)) {
+            const element = document.getElementById(elementId);
+            if (apiKeys[api]) {
+                element.innerHTML = '<span class="badge bg-success">已配置</span>';
+            } else {
+                element.innerHTML = '<span class="badge bg-danger">未配置</span>';
+            }
+        }
+    }
+    
+    function updateModelSettings(modelConfig) {
+        document.getElementById('default-provider').value = modelConfig.provider;
+        document.getElementById('deep-think-model').value = modelConfig.deep_think_model;
+        document.getElementById('quick-think-model').value = modelConfig.quick_think_model;
+    }
+    
+    function loadSystemInfo() {
+        fetch('/api/system-status')
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('python-version').textContent = 'Python 3.10+';
+                document.getElementById('start-time').textContent = new Date().toLocaleString();
+                document.getElementById('core-status').innerHTML = 
+                    data.tradingagents_available ? 
+                    '<span class="badge bg-success">正常</span>' : 
+                    '<span class="badge bg-danger">异常</span>';
+                document.getElementById('db-status').innerHTML = '<span class="badge bg-success">正常</span>';
+                document.getElementById('cache-status').innerHTML = '<span class="badge bg-success">正常</span>';
+                
+                const configuredKeys = Object.values(data.api_keys).filter(Boolean).length;
+                const totalKeys = Object.keys(data.api_keys).length;
+                document.getElementById('api-connectivity').innerHTML = 
+                    `<span class="badge bg-info">${configuredKeys}/${totalKeys} 可用</span>`;
+            })
+            .catch(error => {
+                console.error('加载系统信息失败:', error);
+            });
+    }
+    
+    // API设置表单提交
+    document.getElementById('api-settings-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = {
+            api_keys: {
+                dashscope: document.getElementById('dashscope-key').value,
+                deepseek: document.getElementById('deepseek-key').value,
+                google: document.getElementById('google-key').value,
+                openai: document.getElementById('openai-key').value,
+                finnhub: document.getElementById('finnhub-key').value,
+                tushare: document.getElementById('tushare-token').value
+            }
+        };
+        
+        fetch('/api/settings', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(formData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                throw new Error(data.error);
+            }
+            showAlert('API配置保存成功', 'success');
+        })
+        .catch(error => {
+            showAlert('保存失败: ' + error.message, 'danger');
+        });
+    });
+    
+    // 模型设置表单提交
+    document.getElementById('model-settings-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = {
+            model_config: {
+                provider: document.getElementById('default-provider').value,
+                deep_think_model: document.getElementById('deep-think-model').value,
+                quick_think_model: document.getElementById('quick-think-model').value,
+                temperature: parseFloat(document.getElementById('temperature').value),
+                max_tokens: parseInt(document.getElementById('max-tokens').value),
+                top_p: parseFloat(document.getElementById('top-p').value)
+            }
+        };
+        
+        fetch('/api/settings', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(formData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                throw new Error(data.error);
+            }
+            showAlert('模型设置保存成功', 'success');
+        })
+        .catch(error => {
+            showAlert('保存失败: ' + error.message, 'danger');
+        });
+    });
+    
+    function togglePassword(inputId) {
+        const input = document.getElementById(inputId);
+        const button = input.nextElementSibling;
+        const icon = button.querySelector('i');
+        
+        if (input.type === 'password') {
+            input.type = 'text';
+            icon.className = 'fas fa-eye-slash';
+        } else {
+            input.type = 'password';
+            icon.className = 'fas fa-eye';
+        }
+    }
+    
+    function updateRangeValue(rangeId) {
+        const range = document.getElementById(rangeId);
+        const valueSpan = document.getElementById(rangeId + '-value');
+        valueSpan.textContent = range.value;
+    }
+    
+    function testAllAPIs() {
+        showAlert('API测试功能正在开发中...', 'info');
+    }
+    
+    function resetModelSettings() {
+        document.getElementById('default-provider').value = 'dashscope';
+        document.getElementById('deep-think-model').value = 'qwen-plus';
+        document.getElementById('quick-think-model').value = 'qwen-turbo';
+        document.getElementById('temperature').value = '0.7';
+        document.getElementById('max-tokens').value = '2000';
+        document.getElementById('top-p').value = '0.9';
+        
+        updateRangeValue('temperature');
+        updateRangeValue('top-p');
+    }
+    
+    function clearCache() {
+        if (confirm('确定要清理系统缓存吗？')) {
+            showAlert('缓存清理功能正在开发中...', 'info');
+        }
+    }
+    
+    function checkSystemHealth() {
+        showAlert('正在进行系统健康检查...', 'info');
+        // 这里可以添加实际的健康检查逻辑
+    }
+    
+    function exportLogs() {
+        showAlert('日志导出功能正在开发中...', 'info');
+    }
+    
+    function showAlert(message, type) {
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+        alertDiv.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        
+        // 插入到页面顶部
+        const container = document.querySelector('.container');
+        container.insertBefore(alertDiv, container.firstChild);
+        
+        // 3秒后自动消失
+        setTimeout(() => {
+            if (alertDiv.parentNode) {
+                alertDiv.remove();
+            }
+        }, 3000);
+    }
+</script>
+{% endblock %}

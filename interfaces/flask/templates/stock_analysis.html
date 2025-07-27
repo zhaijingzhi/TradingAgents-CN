@@ -1,0 +1,859 @@
+{% extends "base.html" %}
+
+{% block title %}股票分析 - TradingAgents-CN{% endblock %}
+
+{% block extra_css %}
+<style>
+    .analysis-form {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 15px;
+        padding: 25px;
+        margin-bottom: 25px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    
+    .analysis-form .form-control, .analysis-form .form-select {
+        background: rgba(255,255,255,0.9);
+        border: none;
+        border-radius: 8px;
+        padding: 10px 15px;
+    }
+    
+    .analysis-form .form-control:focus, .analysis-form .form-select:focus {
+        background: white;
+        box-shadow: 0 0 0 0.2rem rgba(255,255,255,0.25);
+    }
+    
+    .analysis-form .btn {
+        background: rgba(255,255,255,0.2);
+        border: 2px solid white;
+        color: white;
+        font-weight: bold;
+        border-radius: 25px;
+        padding: 12px 30px;
+        transition: all 0.3s;
+    }
+    
+    .analysis-form .btn:hover {
+        background: white;
+        color: #667eea;
+        transform: translateY(-2px);
+    }
+    
+    .progress-container {
+        background: white;
+        border-radius: 15px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        display: none;
+    }
+    
+    .result-container {
+        background: white;
+        border-radius: 15px;
+        padding: 25px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        display: none;
+    }
+    
+    .stock-info-card {
+        background: linear-gradient(45deg, #28a745, #20c997);
+        color: white;
+        border-radius: 15px;
+        padding: 20px;
+        margin-bottom: 20px;
+        text-align: center;
+    }
+    
+    .stock-price {
+        font-size: 2.5rem;
+        font-weight: bold;
+        margin: 10px 0;
+    }
+    
+    .stock-change {
+        font-size: 1.1rem;
+        margin-bottom: 10px;
+    }
+    
+    .recommendation-card {
+        border: none;
+        border-radius: 15px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        margin-bottom: 20px;
+    }
+    
+    .recommendation-card.buy {
+        background: linear-gradient(135deg, #28a745, #20c997);
+        color: white;
+    }
+    
+    .recommendation-card.sell {
+        background: linear-gradient(135deg, #dc3545, #c82333);
+        color: white;
+    }
+    
+    .recommendation-card.hold {
+        background: linear-gradient(135deg, #ffc107, #e0a800);
+        color: white;
+    }
+    
+    .chart-tabs {
+        background: white;
+        border-radius: 15px;
+        overflow: hidden;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    
+    .chart-tabs .nav-pills {
+        background: #f8f9fa;
+        padding: 10px;
+        margin: 0;
+    }
+    
+    .chart-tabs .nav-pills .nav-link {
+        border-radius: 20px;
+        font-weight: 500;
+        margin: 0 5px;
+    }
+    
+    .chart-tabs .nav-pills .nav-link.active {
+        background: #667eea;
+    }
+    
+    .analysis-details {
+        background: white;
+        border-radius: 15px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    
+    .metric-badge {
+        display: inline-block;
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-size: 0.9rem;
+        font-weight: 500;
+        margin: 5px;
+    }
+    
+    .metric-badge.success { background: #d4edda; color: #155724; }
+    .metric-badge.warning { background: #fff3cd; color: #856404; }
+    .metric-badge.danger { background: #f8d7da; color: #721c24; }
+    .metric-badge.info { background: #d1ecf1; color: #0c5460; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4">
+            <i class="fas fa-chart-area me-2"></i>
+            智能股票分析
+        </h1>
+    </div>
+</div>
+
+<!-- 分析表单 -->
+<div class="row">
+    <div class="col-md-8">
+        <div class="analysis-form">
+            <h5 class="mb-4">
+                <i class="fas fa-search me-2"></i>
+                开始分析
+            </h5>
+            
+            <form id="analysisForm">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">股票代码</label>
+                        <input type="text" class="form-control" id="stockSymbol" 
+                               placeholder="例如: AAPL, 000001, 600519" required>
+                        <div class="form-text text-light opacity-75 mt-2">
+                            支持美股(AAPL)、A股(000001)、港股(0700.HK)
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">分析深度</label>
+                        <select class="form-select" id="analysisDepth">
+                            <option value="1">快速分析 (2-3分钟)</option>
+                            <option value="2">基础分析 (4-6分钟)</option>
+                            <option value="3" selected>标准分析 (6-10分钟)</option>
+                            <option value="4">深度分析 (10-15分钟)</option>
+                            <option value="5">全面分析 (15-25分钟)</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">分析师选择</label>
+                        <div class="mt-2">
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="checkbox" id="analyst1" value="market" checked>
+                                <label class="form-check-label" for="analyst1">市场分析师</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="checkbox" id="analyst2" value="fundamentals" checked>
+                                <label class="form-check-label" for="analyst2">基本面分析师</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="checkbox" id="analyst3" value="news">
+                                <label class="form-check-label" for="analyst3">新闻分析师</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="checkbox" id="analyst4" value="social">
+                                <label class="form-check-label" for="analyst4">情绪分析师</label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">AI模型</label>
+                        <select class="form-select" id="aiModel">
+                            <option value="dashscope">阿里百炼 (推荐)</option>
+                            <option value="deepseek">DeepSeek V3</option>
+                            <option value="google">Google Gemini</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="text-center mt-4">
+                    <button type="submit" class="btn btn-lg">
+                        <i class="fas fa-rocket me-2"></i>
+                        开始智能分析
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-info-circle me-2"></i>
+                    分析说明
+                </h6>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled mb-0">
+                    <li class="mb-2">
+                        <i class="fas fa-check text-success me-2"></i>
+                        多智能体协作分析
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-check text-success me-2"></i>
+                        实时数据获取
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-check text-success me-2"></i>
+                        技术面 + 基本面分析
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-check text-success me-2"></i>
+                        新闻情绪分析
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-check text-success me-2"></i>
+                        风险评估报告
+                    </li>
+                    <li>
+                        <i class="fas fa-check text-success me-2"></i>
+                        投资建议生成
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 进度显示 -->
+<div class="progress-container" id="progressContainer">
+    <h5 class="mb-3">
+        <i class="fas fa-cogs me-2"></i>
+        分析进行中...
+    </h5>
+    
+    <div class="progress mb-3" style="height: 25px;">
+        <div class="progress-bar progress-bar-striped progress-bar-animated" 
+             id="progressBar" role="progressbar" style="width: 0%">
+            0%
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-8">
+            <div id="progressMessage">正在初始化分析...</div>
+            <div class="mt-2">
+                <small class="text-muted" id="progressDetails">
+                    分析ID: <span id="analysisId">-</span>
+                </small>
+            </div>
+        </div>
+        <div class="col-md-4 text-end">
+            <div class="small text-muted">
+                预计用时: <span id="estimatedTime">计算中...</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 股票信息展示 -->
+<div class="stock-info" id="stockInfoContainer" style="display: none;">
+    <div class="row">
+        <div class="col-md-8">
+            <div class="stock-info-card">
+                <h4 id="stockName">股票名称</h4>
+                <div class="stock-price" id="stockPrice">$0.00</div>
+                <div class="stock-change" id="stockChange">+0.00 (0.00%)</div>
+                <div class="row mt-3">
+                    <div class="col-4">
+                        <div class="small opacity-75">开盘价</div>
+                        <div id="openPrice">-</div>
+                    </div>
+                    <div class="col-4">
+                        <div class="small opacity-75">最高价</div>
+                        <div id="highPrice">-</div>
+                    </div>
+                    <div class="col-4">
+                        <div class="small opacity-75">最低价</div>
+                        <div id="lowPrice">-</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="recommendation-card buy" id="recommendationCard">
+                <div class="card-body text-center">
+                    <h5>投资建议</h5>
+                    <div class="display-6" id="recommendation">买入</div>
+                    <div class="mt-2">
+                        置信度: <span id="confidence">85%</span>
+                    </div>
+                    <div>
+                        风险评分: <span id="riskScore">低</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 图表展示 -->
+<div class="chart-container" id="chartContainer" style="display: none;">
+    <div class="chart-tabs">
+        <ul class="nav nav-pills justify-content-center" id="chartTabs">
+            <li class="nav-item">
+                <a class="nav-link active" data-bs-toggle="pill" href="#priceChart">价格走势</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" data-bs-toggle="pill" href="#volumeChart">成交量</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" data-bs-toggle="pill" href="#technicalChart">技术指标</a>
+            </li>
+        </ul>
+        
+        <div class="tab-content p-3">
+            <div class="tab-pane fade show active" id="priceChart">
+                <canvas id="stockPriceChart" height="300"></canvas>
+            </div>
+            <div class="tab-pane fade" id="volumeChart">
+                <canvas id="stockVolumeChart" height="300"></canvas>
+            </div>
+            <div class="tab-pane fade" id="technicalChart">
+                <canvas id="technicalIndicatorsChart" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 分析结果详情 -->
+<div class="result-container" id="resultContainer">
+    <h5 class="mb-4">
+        <i class="fas fa-chart-pie me-2"></i>
+        分析结果详情
+    </h5>
+    
+    <div class="row">
+        <div class="col-md-6">
+            <div class="analysis-details">
+                <h6>
+                    <i class="fas fa-brain me-2"></i>
+                    AI分析摘要
+                </h6>
+                <div id="analysisSummary">
+                    等待分析结果...
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="analysis-details">
+                <h6>
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    风险提示
+                </h6>
+                <div id="riskWarnings">
+                    等待分析结果...
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="analysis-details">
+        <h6>
+            <i class="fas fa-tags me-2"></i>
+            关键指标
+        </h6>
+        <div id="keyMetrics">
+            等待分析结果...
+        </div>
+    </div>
+    
+    <div class="analysis-details">
+        <h6>
+            <i class="fas fa-download me-2"></i>
+            导出报告
+        </h6>
+        <div class="btn-group" role="group">
+            <button type="button" class="btn btn-outline-primary" onclick="exportReport('pdf')">
+                <i class="fas fa-file-pdf me-1"></i>PDF
+            </button>
+            <button type="button" class="btn btn-outline-primary" onclick="exportReport('word')">
+                <i class="fas fa-file-word me-1"></i>Word
+            </button>
+            <button type="button" class="btn btn-outline-primary" onclick="exportReport('markdown')">
+                <i class="fas fa-file-alt me-1"></i>Markdown
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+let currentAnalysisId = null;
+let priceChart, volumeChart, technicalChart;
+let progressInterval = null;
+
+// 页面加载时初始化
+document.addEventListener('DOMContentLoaded', function() {
+    initCharts();
+    bindFormEvents();
+});
+
+// 初始化图表
+function initCharts() {
+    // 价格走势图
+    const priceCtx = document.getElementById('stockPriceChart').getContext('2d');
+    priceChart = new Chart(priceCtx, {
+        type: 'line',
+        data: {
+            labels: [],
+            datasets: [{
+                label: '收盘价',
+                data: [],
+                borderColor: '#667eea',
+                backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                borderWidth: 2,
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: false,
+                    grid: {
+                        color: 'rgba(0,0,0,0.05)'
+                    }
+                },
+                x: {
+                    grid: {
+                        color: 'rgba(0,0,0,0.05)'
+                    }
+                }
+            }
+        }
+    });
+    
+    // 成交量图
+    const volumeCtx = document.getElementById('stockVolumeChart').getContext('2d');
+    volumeChart = new Chart(volumeCtx, {
+        type: 'bar',
+        data: {
+            labels: [],
+            datasets: [{
+                label: '成交量',
+                data: [],
+                backgroundColor: 'rgba(102, 126, 234, 0.7)',
+                borderColor: '#667eea',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        color: 'rgba(0,0,0,0.05)'
+                    }
+                },
+                x: {
+                    grid: {
+                        display: false
+                    }
+                }
+            }
+        }
+    });
+    
+    // 技术指标图
+    const technicalCtx = document.getElementById('technicalIndicatorsChart').getContext('2d');
+    technicalChart = new Chart(technicalCtx, {
+        type: 'line',
+        data: {
+            labels: [],
+            datasets: [
+                {
+                    label: 'MA5',
+                    data: [],
+                    borderColor: '#28a745',
+                    borderWidth: 1,
+                    fill: false
+                },
+                {
+                    label: 'MA20',
+                    data: [],
+                    borderColor: '#dc3545',
+                    borderWidth: 1,
+                    fill: false
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: false,
+                    grid: {
+                        color: 'rgba(0,0,0,0.05)'
+                    }
+                },
+                x: {
+                    grid: {
+                        color: 'rgba(0,0,0,0.05)'
+                    }
+                }
+            }
+        }
+    });
+}
+
+// 绑定表单事件
+function bindFormEvents() {
+    document.getElementById('analysisForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        startAnalysis();
+    });
+}
+
+// 开始分析
+function startAnalysis() {
+    const symbol = document.getElementById('stockSymbol').value.trim();
+    if (!symbol) {
+        alert('请输入股票代码');
+        return;
+    }
+    
+    // 获取表单数据
+    const formData = {
+        stock_symbol: symbol,
+        analysis_depth: parseInt(document.getElementById('analysisDepth').value),
+        ai_model: document.getElementById('aiModel').value,
+        analysts: getSelectedAnalysts()
+    };
+    
+    // 显示进度
+    showProgress();
+    
+    // 调用API
+    fetch('/api/analyze', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(formData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.error) {
+            throw new Error(data.error);
+        }
+        
+        currentAnalysisId = data.analysis_id;
+        document.getElementById('analysisId').textContent = currentAnalysisId;
+        
+        // 开始轮询进度
+        startProgressPolling();
+        
+        // 加载股票数据
+        loadStockData(symbol);
+    })
+    .catch(error => {
+        hideProgress();
+        alert('分析启动失败: ' + error.message);
+    });
+}
+
+// 获取选中的分析师
+function getSelectedAnalysts() {
+    const analysts = [];
+    const checkboxes = document.querySelectorAll('input[type="checkbox"]:checked');
+    checkboxes.forEach(cb => {
+        analysts.push(cb.value);
+    });
+    return analysts;
+}
+
+// 显示进度
+function showProgress() {
+    document.getElementById('progressContainer').style.display = 'block';
+    document.getElementById('stockInfoContainer').style.display = 'none';
+    document.getElementById('chartContainer').style.display = 'none';
+    document.getElementById('resultContainer').style.display = 'none';
+    
+    // 重置进度
+    updateProgress(0, '正在初始化分析...');
+}
+
+// 隐藏进度
+function hideProgress() {
+    document.getElementById('progressContainer').style.display = 'none';
+    if (progressInterval) {
+        clearInterval(progressInterval);
+        progressInterval = null;
+    }
+}
+
+// 更新进度
+function updateProgress(percent, message, details = '') {
+    const progressBar = document.getElementById('progressBar');
+    progressBar.style.width = percent + '%';
+    progressBar.textContent = percent + '%';
+    
+    document.getElementById('progressMessage').textContent = message;
+    if (details) {
+        document.getElementById('progressDetails').innerHTML = details;
+    }
+}
+
+// 开始轮询进度
+function startProgressPolling() {
+    progressInterval = setInterval(() => {
+        if (!currentAnalysisId) return;
+        
+        fetch(`/api/progress/${currentAnalysisId}`)
+            .then(response => response.json())
+            .then(data => {
+                updateProgress(data.progress, data.message);
+                
+                if (data.status === 'completed') {
+                    clearInterval(progressInterval);
+                    hideProgress();
+                    showResults(data.result);
+                } else if (data.status === 'failed') {
+                    clearInterval(progressInterval);
+                    hideProgress();
+                    alert('分析失败: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('获取进度失败:', error);
+            });
+    }, 2000);
+}
+
+// 加载股票数据
+function loadStockData(symbol) {
+    fetch(`/api/stock-data/${symbol}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                console.error('获取股票数据失败:', data.error);
+                return;
+            }
+            
+            updateStockInfo(data);
+            updateCharts(data);
+            
+            document.getElementById('stockInfoContainer').style.display = 'block';
+            document.getElementById('chartContainer').style.display = 'block';
+        })
+        .catch(error => {
+            console.error('加载股票数据失败:', error);
+        });
+}
+
+// 更新股票信息
+function updateStockInfo(data) {
+    document.getElementById('stockName').textContent = data.symbol;
+    document.getElementById('stockPrice').textContent = '$' + data.current_price.toFixed(2);
+    
+    const change = data.change;
+    const changeClass = change >= 0 ? 'positive' : 'negative';
+    const changeIcon = change >= 0 ? '↗' : '↘';
+    document.getElementById('stockChange').innerHTML = 
+        `<span class="${changeClass}">${changeIcon} ${change > 0 ? '+' : ''}${change.toFixed(2)}%</span>`;
+    
+    // 更新其他价格信息（模拟数据）
+    const prices = data.prices;
+    if (prices && prices.length > 0) {
+        const latest = prices[prices.length - 1];
+        document.getElementById('openPrice').textContent = '$' + (latest * 0.99).toFixed(2);
+        document.getElementById('highPrice').textContent = '$' + (latest * 1.02).toFixed(2);
+        document.getElementById('lowPrice').textContent = '$' + (latest * 0.97).toFixed(2);
+    }
+}
+
+// 更新图表
+function updateCharts(data) {
+    const dates = data.dates.slice(-30); // 最近30天
+    const prices = data.prices.slice(-30);
+    const volumes = data.volumes.slice(-30);
+    
+    // 更新价格图表
+    priceChart.data.labels = dates;
+    priceChart.data.datasets[0].data = prices;
+    priceChart.update();
+    
+    // 更新成交量图表
+    volumeChart.data.labels = dates;
+    volumeChart.data.datasets[0].data = volumes;
+    volumeChart.update();
+    
+    // 更新技术指标图表（计算简单移动平均）
+    const ma5 = calculateMA(prices, 5);
+    const ma20 = calculateMA(prices, 20);
+    
+    technicalChart.data.labels = dates.slice(19); // MA20需要20个数据点
+    technicalChart.data.datasets[0].data = ma5.slice(19);
+    technicalChart.data.datasets[1].data = ma20;
+    technicalChart.update();
+}
+
+// 计算移动平均线
+function calculateMA(prices, period) {
+    const ma = [];
+    for (let i = period - 1; i < prices.length; i++) {
+        const sum = prices.slice(i - period + 1, i + 1).reduce((a, b) => a + b, 0);
+        ma.push(sum / period);
+    }
+    return ma;
+}
+
+// 显示分析结果
+function showResults(result) {
+    document.getElementById('resultContainer').style.display = 'block';
+    
+    if (result && result.decision) {
+        const decision = result.decision;
+        
+        // 更新投资建议
+        updateRecommendation(decision);
+        
+        // 更新分析摘要
+        document.getElementById('analysisSummary').innerHTML = 
+            decision.reasoning || '分析摘要将在此显示...';
+        
+        // 更新风险提示
+        document.getElementById('riskWarnings').innerHTML = 
+            generateRiskWarnings(decision.risk_score);
+        
+        // 更新关键指标
+        document.getElementById('keyMetrics').innerHTML = 
+            generateKeyMetrics(decision);
+    }
+}
+
+// 更新投资建议
+function updateRecommendation(decision) {
+    const action = decision.action || 'hold';
+    const confidence = (decision.confidence * 100).toFixed(0) || 50;
+    const riskScore = decision.risk_score || 0.5;
+    
+    const card = document.getElementById('recommendationCard');
+    card.className = `recommendation-card ${action.toLowerCase()}`;
+    
+    document.getElementById('recommendation').textContent = 
+        action === 'buy' ? '买入' : action === 'sell' ? '卖出' : '持有';
+    document.getElementById('confidence').textContent = confidence + '%';
+    document.getElementById('riskScore').textContent = 
+        riskScore > 0.7 ? '高' : riskScore > 0.4 ? '中' : '低';
+}
+
+// 生成风险提示
+function generateRiskWarnings(riskScore) {
+    const warnings = [
+        '投资有风险，入市需谨慎',
+        '本分析仅供参考，不构成投资建议',
+        '请根据自身风险承受能力做出投资决策'
+    ];
+    
+    if (riskScore > 0.7) {
+        warnings.unshift('⚠️ 高风险警告：该股票风险评分较高，请谨慎投资');
+    }
+    
+    return warnings.map(w => `<div class="alert alert-warning small mb-2">${w}</div>`).join('');
+}
+
+// 生成关键指标
+function generateKeyMetrics(decision) {
+    const metrics = [
+        { label: '技术评分', value: '85', type: 'success' },
+        { label: '基本面评分', value: '72', type: 'info' },
+        { label: '市场情绪', value: '68', type: 'warning' },
+        { label: '新闻情绪', value: '90', type: 'success' }
+    ];
+    
+    return metrics.map(m => 
+        `<span class="metric-badge ${m.type}">${m.label}: ${m.value}分</span>`
+    ).join('');
+}
+
+// 导出报告
+function exportReport(format) {
+    if (!currentAnalysisId) {
+        alert('没有可导出的分析报告');
+        return;
+    }
+    
+    window.open(`/api/export/${currentAnalysisId}?format=${format}`, '_blank');
+}
+</script>
+{% endblock %}

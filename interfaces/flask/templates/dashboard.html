@@ -1,0 +1,614 @@
+{% extends "base.html" %}
+
+{% block title %}仪表板 - TradingAgents-CN{% endblock %}
+
+{% block extra_css %}
+<style>
+    .metric-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 15px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    
+    .metric-card h5 {
+        font-size: 0.9rem;
+        opacity: 0.8;
+        margin-bottom: 10px;
+    }
+    
+    .metric-card .metric-value {
+        font-size: 2rem;
+        font-weight: bold;
+        margin-bottom: 5px;
+    }
+    
+    .metric-card .metric-change {
+        font-size: 0.8rem;
+        opacity: 0.9;
+    }
+    
+    .chart-container {
+        background: white;
+        border-radius: 15px;
+        padding: 20px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        margin-bottom: 20px;
+    }
+    
+    .status-indicator {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 8px;
+    }
+    
+    .status-connected { background-color: #28a745; }
+    .status-disconnected { background-color: #dc3545; }
+    .status-warning { background-color: #ffc107; }
+    
+    .market-overview-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+        margin-bottom: 20px;
+    }
+    
+    .index-card {
+        background: white;
+        border-radius: 10px;
+        padding: 15px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        text-align: center;
+    }
+    
+    .index-card .index-name {
+        font-size: 0.9rem;
+        color: #666;
+        margin-bottom: 5px;
+    }
+    
+    .index-card .index-value {
+        font-size: 1.3rem;
+        font-weight: bold;
+        color: #333;
+        margin-bottom: 5px;
+    }
+    
+    .index-card .index-change {
+        font-size: 0.8rem;
+        font-weight: 500;
+    }
+    
+    .positive { color: #28a745; }
+    .negative { color: #dc3545; }
+    
+    .refresh-button {
+        background: linear-gradient(45deg, #28a745, #20c997);
+        border: none;
+        color: white;
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    
+    .refresh-button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="mb-0">
+                <i class="fas fa-tachometer-alt me-2"></i>
+                系统仪表板
+            </h1>
+            <button class="refresh-button" onclick="refreshDashboard()">
+                <i class="fas fa-sync-alt me-1"></i>刷新数据
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- 系统状态概览 -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="metric-card">
+            <h5><i class="fas fa-key me-1"></i>API配置</h5>
+            <div class="metric-value" id="api-status">检查中...</div>
+            <div class="metric-change" id="api-details"></div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="metric-card">
+            <h5><i class="fas fa-database me-1"></i>数据库状态</h5>
+            <div class="metric-value" id="db-status">检查中...</div>
+            <div class="metric-change" id="db-details"></div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="metric-card">
+            <h5><i class="fas fa-chart-line me-1"></i>今日分析</h5>
+            <div class="metric-value" id="today-analyses">0</div>
+            <div class="metric-change">次分析完成</div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="metric-card">
+            <h5><i class="fas fa-tasks me-1"></i>系统健康</h5>
+            <div class="metric-value" id="system-health">正常</div>
+            <div class="metric-change" id="health-details"></div>
+        </div>
+    </div>
+</div>
+
+<!-- 市场概览 -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="chart-container">
+            <h5 class="mb-3">
+                <i class="fas fa-globe me-2"></i>市场概览
+                <small class="text-muted ms-2">实时指数行情</small>
+            </h5>
+            <div class="market-overview-grid" id="market-overview">
+                <!-- 市场指数将在此处动态加载 -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 分析性能图表 -->
+<div class="row mb-4">
+    <div class="col-md-8">
+        <div class="chart-container">
+            <h5 class="mb-3">
+                <i class="fas fa-chart-area me-2"></i>分析性能趋势
+            </h5>
+            <canvas id="performanceChart" height="300"></canvas>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="chart-container">
+            <h5 class="mb-3">
+                <i class="fas fa-pie-chart me-2"></i>模型使用分布
+            </h5>
+            <canvas id="modelChart" height="300"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- 热门股票和板块 -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="chart-container">
+            <h5 class="mb-3">
+                <i class="fas fa-fire me-2"></i>热门股票
+            </h5>
+            <div id="hot-stocks">
+                <!-- 热门股票列表将在此处动态加载 -->
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="chart-container">
+            <h5 class="mb-3">
+                <i class="fas fa-layer-group me-2"></i>板块表现
+            </h5>
+            <canvas id="sectorsChart" height="200"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- 数据库详细状态 -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="chart-container">
+            <h5 class="mb-3">
+                <i class="fas fa-server me-2"></i>数据库详细状态
+            </h5>
+            <div class="row" id="database-details">
+                <!-- 数据库详细信息将在此处动态加载 -->
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+// 全局变量
+let performanceChart, modelChart, sectorsChart;
+
+// 页面加载时初始化
+document.addEventListener('DOMContentLoaded', function() {
+    initCharts();
+    loadSystemStatus();
+    loadMarketOverview();
+    loadAnalytics();
+    loadDatabaseStatus();
+    
+    // 每30秒刷新数据
+    setInterval(refreshDashboard, 30000);
+});
+
+// 初始化图表
+function initCharts() {
+    // 性能趋势图表
+    const performanceCtx = document.getElementById('performanceChart').getContext('2d');
+    performanceChart = new Chart(performanceCtx, {
+        type: 'line',
+        data: {
+            labels: [],
+            datasets: [{
+                label: '每日分析次数',
+                data: [],
+                borderColor: '#667eea',
+                backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                borderWidth: 2,
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        color: 'rgba(0,0,0,0.05)'
+                    }
+                },
+                x: {
+                    grid: {
+                        color: 'rgba(0,0,0,0.05)'
+                    }
+                }
+            }
+        }
+    });
+    
+    // 模型使用分布饼图
+    const modelCtx = document.getElementById('modelChart').getContext('2d');
+    modelChart = new Chart(modelCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['阿里百炼', 'DeepSeek', 'Google AI'],
+            datasets: [{
+                data: [45, 32, 23],
+                backgroundColor: ['#667eea', '#764ba2', '#f093fb'],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+    
+    // 板块表现图表
+    const sectorsCtx = document.getElementById('sectorsChart').getContext('2d');
+    sectorsChart = new Chart(sectorsCtx, {
+        type: 'bar',
+        data: {
+            labels: ['科技', '金融', '医疗', '消费', '能源', '地产'],
+            datasets: [{
+                label: '涨跌幅 (%)',
+                data: [2.15, -0.87, 1.43, 0.76, -1.23, -2.45],
+                backgroundColor: function(context) {
+                    const value = context.parsed.y;
+                    return value >= 0 ? '#28a745' : '#dc3545';
+                },
+                borderRadius: 5
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        color: 'rgba(0,0,0,0.05)'
+                    }
+                },
+                x: {
+                    grid: {
+                        display: false
+                    }
+                }
+            }
+        }
+    });
+}
+
+// 加载系统状态
+function loadSystemStatus() {
+    fetch('/api/system-status')
+        .then(response => response.json())
+        .then(data => {
+            updateSystemStatus(data);
+        })
+        .catch(error => {
+            console.error('Error loading system status:', error);
+        });
+}
+
+// 更新系统状态显示
+function updateSystemStatus(data) {
+    // API状态
+    const configuredKeys = Object.values(data.api_keys).filter(Boolean).length;
+    const totalKeys = Object.keys(data.api_keys).length;
+    const apiStatus = document.getElementById('api-status');
+    const apiDetails = document.getElementById('api-details');
+    
+    if (configuredKeys === totalKeys) {
+        apiStatus.textContent = '全部配置';
+        apiDetails.innerHTML = '<span class="status-indicator status-connected"></span>所有API已配置';
+    } else {
+        apiStatus.textContent = `${configuredKeys}/${totalKeys}`;
+        apiDetails.innerHTML = '<span class="status-indicator status-warning"></span>部分API未配置';
+    }
+    
+    // 数据库状态
+    const dbStatus = document.getElementById('db-status');
+    const dbDetails = document.getElementById('db-details');
+    const dbData = data.database_status || {};
+    
+    let dbConnected = 0;
+    if (dbData.mongodb_connected) dbConnected++;
+    if (dbData.redis_connected) dbConnected++;
+    
+    if (dbConnected === 2) {
+        dbStatus.textContent = '全部连接';
+        dbDetails.innerHTML = '<span class="status-indicator status-connected"></span>MongoDB + Redis';
+    } else if (dbConnected === 1) {
+        dbStatus.textContent = '部分连接';
+        dbDetails.innerHTML = '<span class="status-indicator status-warning"></span>部分数据库连接';
+    } else {
+        dbStatus.textContent = '未连接';
+        dbDetails.innerHTML = '<span class="status-indicator status-disconnected"></span>数据库未连接';
+    }
+    
+    // 今日分析
+    document.getElementById('today-analyses').textContent = data.completed_analyses || 0;
+    
+    // 系统健康
+    const healthStatus = data.system_health;
+    const systemHealth = document.getElementById('system-health');
+    const healthDetails = document.getElementById('health-details');
+    
+    if (healthStatus.api_connectivity === 'partial' && healthStatus.cache_status === 'enabled') {
+        systemHealth.textContent = '良好';
+        healthDetails.innerHTML = '<span class="status-indicator status-connected"></span>系统运行正常';
+    } else {
+        systemHealth.textContent = '需要关注';
+        healthDetails.innerHTML = '<span class="status-indicator status-warning"></span>需要配置优化';
+    }
+}
+
+// 加载市场概览
+function loadMarketOverview() {
+    fetch('/api/market-overview')
+        .then(response => response.json())
+        .then(data => {
+            updateMarketOverview(data);
+        })
+        .catch(error => {
+            console.error('Error loading market overview:', error);
+        });
+}
+
+// 更新市场概览显示
+function updateMarketOverview(data) {
+    const container = document.getElementById('market-overview');
+    container.innerHTML = '';
+    
+    data.indices.forEach(index => {
+        const changeClass = index.change >= 0 ? 'positive' : 'negative';
+        const changeIcon = index.change >= 0 ? '↗' : '↘';
+        
+        const indexCard = document.createElement('div');
+        indexCard.className = 'index-card';
+        indexCard.innerHTML = `
+            <div class="index-name">${index.name}</div>
+            <div class="index-value">${index.value.toFixed(2)}</div>
+            <div class="index-change ${changeClass}">
+                ${changeIcon} ${index.change > 0 ? '+' : ''}${index.change.toFixed(2)} 
+                (${(index.change_percent * 100).toFixed(2)}%)
+            </div>
+        `;
+        container.appendChild(indexCard);
+    });
+    
+    // 更新热门股票
+    updateHotStocks(data.hot_stocks);
+    
+    // 更新板块数据
+    updateSectorsChart(data.sectors);
+}
+
+// 更新热门股票
+function updateHotStocks(stocks) {
+    const container = document.getElementById('hot-stocks');
+    container.innerHTML = '';
+    
+    stocks.forEach(stock => {
+        const changeClass = stock.change_percent >= 0 ? 'positive' : 'negative';
+        const changeIcon = stock.change_percent >= 0 ? '↗' : '↘';
+        
+        const stockItem = document.createElement('div');
+        stockItem.className = 'mb-2 p-2 border rounded';
+        stockItem.innerHTML = `
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <strong>${stock.symbol}</strong>
+                    <small class="text-muted ms-1">${stock.name}</small>
+                </div>
+                <div class="text-end">
+                    <div>${stock.price.toFixed(2)}</div>
+                    <div class="small ${changeClass}">
+                        ${changeIcon} ${stock.change_percent > 0 ? '+' : ''}${stock.change_percent.toFixed(2)}%
+                    </div>
+                </div>
+            </div>
+        `;
+        container.appendChild(stockItem);
+    });
+}
+
+// 更新板块图表
+function updateSectorsChart(sectors) {
+    if (sectorsChart) {
+        sectorsChart.data.labels = sectors.map(s => s.name);
+        sectorsChart.data.datasets[0].data = sectors.map(s => s.change_percent);
+        sectorsChart.update();
+    }
+}
+
+// 加载分析数据
+function loadAnalytics() {
+    fetch('/api/analytics/dashboard')
+        .then(response => response.json())
+        .then(data => {
+            updateAnalytics(data);
+        })
+        .catch(error => {
+            console.error('Error loading analytics:', error);
+        });
+}
+
+// 更新分析数据
+function updateAnalytics(data) {
+    const metrics = data.performance_metrics;
+    
+    if (performanceChart && metrics.daily_analyses) {
+        // 生成最近14天的日期标签
+        const labels = [];
+        for (let i = 13; i >= 0; i--) {
+            const date = new Date();
+            date.setDate(date.getDate() - i);
+            labels.push(date.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' }));
+        }
+        
+        performanceChart.data.labels = labels;
+        performanceChart.data.datasets[0].data = metrics.daily_analyses;
+        performanceChart.update();
+    }
+    
+    if (modelChart && metrics.model_usage) {
+        modelChart.data.datasets[0].data = Object.values(metrics.model_usage);
+        modelChart.update();
+    }
+}
+
+// 加载数据库状态
+function loadDatabaseStatus() {
+    fetch('/api/database/status')
+        .then(response => response.json())
+        .then(data => {
+            updateDatabaseDetails(data);
+        })
+        .catch(error => {
+            console.error('Error loading database status:', error);
+        });
+}
+
+// 更新数据库详细信息
+function updateDatabaseDetails(data) {
+    const container = document.getElementById('database-details');
+    container.innerHTML = `
+        <div class="col-md-4">
+            <div class="text-center p-3 border rounded">
+                <i class="fas fa-leaf fa-2x mb-2 ${data.mongodb.connected ? 'text-success' : 'text-danger'}"></i>
+                <h6>MongoDB</h6>
+                <div class="small">
+                    状态: ${data.mongodb.connected ? '已连接' : '未连接'}<br>
+                    集合: ${data.mongodb.collections}<br>
+                    记录: ${data.mongodb.records}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="text-center p-3 border rounded">
+                <i class="fas fa-cube fa-2x mb-2 ${data.redis.connected ? 'text-success' : 'text-danger'}"></i>
+                <h6>Redis</h6>
+                <div class="small">
+                    状态: ${data.redis.connected ? '已连接' : '未连接'}<br>
+                    键数: ${data.redis.keys}<br>
+                    内存: ${data.redis.memory_usage}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="text-center p-3 border rounded">
+                <i class="fas fa-tachometer-alt fa-2x mb-2 ${data.cache.enabled ? 'text-success' : 'text-warning'}"></i>
+                <h6>缓存系统</h6>
+                <div class="small">
+                    状态: ${data.cache.enabled ? '已启用' : '未启用'}<br>
+                    命中率: ${data.cache.hit_rate}%<br>
+                    类型: 多层缓存
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// 刷新仪表板
+function refreshDashboard() {
+    loadSystemStatus();
+    loadMarketOverview();
+    loadAnalytics();
+    loadDatabaseStatus();
+    
+    // 显示刷新动画
+    const button = document.querySelector('.refresh-button i');
+    button.style.animation = 'spin 1s linear';
+    setTimeout(() => {
+        button.style.animation = '';
+    }, 1000);
+}
+
+// CSS动画
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+`;
+document.head.appendChild(style);
+</script>
+{% endblock %}

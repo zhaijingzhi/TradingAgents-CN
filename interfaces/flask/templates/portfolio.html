@@ -1,0 +1,383 @@
+{% extends "base.html" %}
+
+{% block title %}投资组合 - TradingAgents-CN{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4">
+            <i class="fas fa-briefcase me-2"></i>
+            投资组合管理
+        </h1>
+    </div>
+</div>
+
+<!-- 组合概览 -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-dollar-sign fa-2x text-success mb-2"></i>
+                <h5 class="card-title">总市值</h5>
+                <h4 class="text-success" id="total-value">¥0.00</h4>
+                <small class="text-muted" id="daily-change">今日: +0.00%</small>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-chart-line fa-2x text-primary mb-2"></i>
+                <h5 class="card-title">总收益</h5>
+                <h4 class="text-primary" id="total-profit">¥0.00</h4>
+                <small class="text-muted" id="total-return">收益率: +0.00%</small>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-list fa-2x text-info mb-2"></i>
+                <h5 class="card-title">持仓数量</h5>
+                <h4 class="text-info" id="holdings-count">0只</h4>
+                <small class="text-muted">活跃持仓</small>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-shield-alt fa-2x text-warning mb-2"></i>
+                <h5 class="card-title">风险等级</h5>
+                <h4 class="text-warning" id="risk-level">稳健</h4>
+                <small class="text-muted">风险评分: B+</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 操作按钮 -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-tools me-2"></i>
+                持仓管理
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4 mb-2">
+                        <button class="btn btn-primary w-100" data-bs-toggle="modal" data-bs-target="#addHoldingModal">
+                            <i class="fas fa-plus me-2"></i>
+                            添加持仓
+                        </button>
+                    </div>
+                    <div class="col-md-4 mb-2">
+                        <button class="btn btn-outline-primary w-100" onclick="batchAnalysis()">
+                            <i class="fas fa-chart-area me-2"></i>
+                            批量分析
+                        </button>
+                    </div>
+                    <div class="col-md-4 mb-2">
+                        <button class="btn btn-outline-primary w-100" onclick="exportPortfolio()">
+                            <i class="fas fa-download me-2"></i>
+                            导出持仓
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 持仓列表 -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-list me-2"></i>
+                持仓明细
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover" id="holdings-table">
+                        <thead>
+                            <tr>
+                                <th>股票代码</th>
+                                <th>股票名称</th>
+                                <th>持仓数量</th>
+                                <th>平均成本</th>
+                                <th>当前价格</th>
+                                <th>市值</th>
+                                <th>盈亏</th>
+                                <th>收益率</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="holdings-tbody">
+                            <tr>
+                                <td colspan="9" class="text-center text-muted">
+                                    <i class="fas fa-inbox fa-3x mb-3"></i>
+                                    <p>暂无持仓数据</p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 添加持仓模态框 -->
+<div class="modal fade" id="addHoldingModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-plus me-2"></i>
+                    添加持仓
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="add-holding-form">
+                    <div class="mb-3">
+                        <label for="holding-symbol" class="form-label">股票代码</label>
+                        <input type="text" class="form-control" id="holding-symbol" 
+                               placeholder="如: AAPL, 000001" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="holding-name" class="form-label">股票名称</label>
+                        <input type="text" class="form-control" id="holding-name" 
+                               placeholder="如: 苹果公司">
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="holding-quantity" class="form-label">持仓数量</label>
+                                <input type="number" class="form-control" id="holding-quantity" 
+                                       min="1" step="1" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="holding-cost" class="form-label">平均成本</label>
+                                <input type="number" class="form-control" id="holding-cost" 
+                                       min="0.01" step="0.01" required>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="holding-notes" class="form-label">备注</label>
+                        <textarea class="form-control" id="holding-notes" rows="2" 
+                                  placeholder="购买理由或其他备注"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" onclick="addHolding()">添加持仓</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let portfolioData = null;
+    
+    // 页面加载时获取投资组合数据
+    document.addEventListener('DOMContentLoaded', function() {
+        loadPortfolioData();
+    });
+    
+    function loadPortfolioData() {
+        fetch('/api/portfolio')
+            .then(response => response.json())
+            .then(data => {
+                portfolioData = data;
+                updatePortfolioDisplay(data);
+            })
+            .catch(error => {
+                console.error('加载投资组合数据失败:', error);
+                showAlert('加载投资组合数据失败', 'danger');
+            });
+    }
+    
+    function updatePortfolioDisplay(data) {
+        // 更新概览数据
+        document.getElementById('total-value').textContent = 
+            `¥${data.total_value.toLocaleString('zh-CN', {minimumFractionDigits: 2})}`;
+        document.getElementById('daily-change').textContent = 
+            `今日: ${data.daily_change > 0 ? '+' : ''}${data.daily_change.toFixed(2)}%`;
+        document.getElementById('total-profit').textContent = 
+            `¥${data.total_profit.toLocaleString('zh-CN', {minimumFractionDigits: 2})}`;
+        document.getElementById('total-return').textContent = 
+            `收益率: ${data.total_return > 0 ? '+' : ''}${data.total_return.toFixed(2)}%`;
+        document.getElementById('holdings-count').textContent = 
+            `${data.holdings.length}只`;
+        
+        // 更新持仓列表
+        updateHoldingsTable(data.holdings);
+    }
+    
+    function updateHoldingsTable(holdings) {
+        const tbody = document.getElementById('holdings-tbody');
+        
+        if (holdings.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="9" class="text-center text-muted">
+                        <i class="fas fa-inbox fa-3x mb-3"></i>
+                        <p>暂无持仓数据</p>
+                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addHoldingModal">
+                            添加第一个持仓
+                        </button>
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+        
+        tbody.innerHTML = holdings.map(holding => {
+            const profitClass = holding.profit_loss >= 0 ? 'text-success' : 'text-danger';
+            const profitIcon = holding.profit_loss >= 0 ? 'fa-arrow-up' : 'fa-arrow-down';
+            
+            return `
+                <tr>
+                    <td><strong>${holding.symbol}</strong></td>
+                    <td>${holding.name}</td>
+                    <td>${holding.quantity}</td>
+                    <td>¥${holding.avg_cost.toFixed(2)}</td>
+                    <td>¥${holding.current_price.toFixed(2)}</td>
+                    <td>¥${holding.market_value.toLocaleString('zh-CN', {minimumFractionDigits: 2})}</td>
+                    <td class="${profitClass}">
+                        <i class="fas ${profitIcon} me-1"></i>
+                        ¥${Math.abs(holding.profit_loss).toFixed(2)}
+                    </td>
+                    <td class="${profitClass}">
+                        ${holding.return_rate > 0 ? '+' : ''}${holding.return_rate.toFixed(2)}%
+                    </td>
+                    <td>
+                        <div class="btn-group btn-group-sm">
+                            <button class="btn btn-outline-primary" onclick="analyzeStock('${holding.symbol}')" 
+                                    title="分析">
+                                <i class="fas fa-chart-area"></i>
+                            </button>
+                            <button class="btn btn-outline-danger" onclick="removeHolding('${holding.symbol}')" 
+                                    title="删除">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    }
+    
+    function addHolding() {
+        const form = document.getElementById('add-holding-form');
+        const formData = new FormData(form);
+        
+        const data = {
+            symbol: document.getElementById('holding-symbol').value.trim().toUpperCase(),
+            name: document.getElementById('holding-name').value.trim(),
+            quantity: parseFloat(document.getElementById('holding-quantity').value),
+            avg_cost: parseFloat(document.getElementById('holding-cost').value),
+            notes: document.getElementById('holding-notes').value.trim()
+        };
+        
+        // 验证数据
+        if (!data.symbol || !data.quantity || !data.avg_cost) {
+            showAlert('请填写必需字段', 'warning');
+            return;
+        }
+        
+        fetch('/api/portfolio/add', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        })
+        .then(response => response.json())
+        .then(result => {
+            if (result.error) {
+                throw new Error(result.error);
+            }
+            
+            showAlert(result.message, 'success');
+            
+            // 关闭模态框
+            const modal = bootstrap.Modal.getInstance(document.getElementById('addHoldingModal'));
+            modal.hide();
+            
+            // 清空表单
+            form.reset();
+            
+            // 重新加载数据
+            loadPortfolioData();
+        })
+        .catch(error => {
+            showAlert('添加持仓失败: ' + error.message, 'danger');
+        });
+    }
+    
+    function analyzeStock(symbol) {
+        // 跳转到股票分析页面
+        window.location.href = `/stock-analysis?symbol=${symbol}`;
+    }
+    
+    function removeHolding(symbol) {
+        if (confirm(`确定要删除 ${symbol} 的持仓吗？`)) {
+            showAlert('删除功能正在开发中...', 'info');
+        }
+    }
+    
+    function batchAnalysis() {
+        if (!portfolioData || portfolioData.holdings.length === 0) {
+            showAlert('没有持仓数据可供分析', 'warning');
+            return;
+        }
+        
+        showAlert('批量分析功能正在开发中...', 'info');
+    }
+    
+    function exportPortfolio() {
+        if (!portfolioData || portfolioData.holdings.length === 0) {
+            showAlert('没有持仓数据可供导出', 'warning');
+            return;
+        }
+        
+        showAlert('导出功能正在开发中...', 'info');
+    }
+    
+    function showAlert(message, type) {
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+        alertDiv.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        
+        // 插入到页面顶部
+        const container = document.querySelector('.container');
+        container.insertBefore(alertDiv, container.firstChild);
+        
+        // 3秒后自动消失
+        setTimeout(() => {
+            if (alertDiv.parentNode) {
+                alertDiv.remove();
+            }
+        }, 3000);
+    }
+</script>
+{% endblock %}
